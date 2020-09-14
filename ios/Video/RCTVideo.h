@@ -21,6 +21,8 @@
 @interface RCTVideo : UIView <RCTVideoPlayerViewControllerDelegate, AVPictureInPictureControllerDelegate>
 #endif
 
++ (CMClockRef) sharedMasterClock;
+
 @property (nonatomic, copy) RCTDirectEventBlock onVideoLoadStart;
 @property (nonatomic, copy) RCTDirectEventBlock onVideoLoad;
 @property (nonatomic, copy) RCTDirectEventBlock onVideoBuffer;

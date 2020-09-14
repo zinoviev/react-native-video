@@ -3,6 +3,7 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/UIView+React.h>
+#import "CoreMedia/CoreMedia.h"
 #include <MediaAccessibility/MediaAccessibility.h>
 #include <AVFoundation/AVFoundation.h>
 
@@ -337,6 +338,17 @@ static int const RCTVideoUnset = -1;
   }
 }
 
+# pragma mark - Hackity hack
++ (CMClockRef) sharedMasterClock {
+    static CMClockRef masterClockInstance = nil;
+    if (masterClockInstance == nil) {
+        CMAudioClockCreate(nil, masterClockInstance);
+    }
+
+    return masterClockInstance;
+    //return nil;
+}
+
 #pragma mark - Player and source
 
 - (void)setSrc:(NSDictionary *)source
@@ -367,6 +379,12 @@ static int const RCTVideoUnset = -1;
       }
         
       _player = [AVPlayer playerWithPlayerItem:_playerItem];
+        
+      // start hack
+        
+       _player.masterClock = [RCTVideo sharedMasterClock];
+      //
+      
       _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
         
       [_player addObserver:self forKeyPath:playbackRate options:0 context:nil];
@@ -826,7 +844,7 @@ static int const RCTVideoUnset = -1;
   } else if (_pipController && !_pictureInPicture && [_pipController isPictureInPictureActive]) {
     dispatch_async(dispatch_get_main_queue(), ^{
       [_pipController stopPictureInPicture];
-	});
+    });
   }
   #endif
 }
@@ -866,6 +884,7 @@ static int const RCTVideoUnset = -1;
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
       [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
     }
+   
     [_player play];
     [_player setRate:_rate];
   }
