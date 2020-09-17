@@ -115,6 +115,11 @@ static int const RCTVideoUnset = -1;
     _videoCache = [RCTVideoCache sharedInstance];
 #endif
     [[NSNotificationCenter defaultCenter] addObserver:self
+    selector:@selector(starifyHack:)
+        name:@"STARIFY_Hack"
+      object:nil];
+      
+    [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(applicationWillResignActive:)
                                                  name:UIApplicationWillResignActiveNotification
                                                object:nil];
@@ -136,6 +141,20 @@ static int const RCTVideoUnset = -1;
   }
   
   return self;
+}
+
+- (void)starifyHack:(NSNotification *)notification
+{
+    NSLog(@"in hack");
+    
+    //AVPlayerItem *item = [notification object];
+    if (_player != nil && _playerItem != nil) {
+        if (_player.status == AVPlayerStatusReadyToPlay) {
+            [_playerItem seekToTime:kCMTimeZero];
+            [self applyModifiers];
+        }
+      
+    }
 }
 
 - (RCTVideoPlayerViewController*)createPlayerViewController:(AVPlayer*)player
@@ -379,11 +398,18 @@ static int const RCTVideoUnset = -1;
       }
         
       _player = [AVPlayer playerWithPlayerItem:_playerItem];
-        
+      
+      [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+      
       // start hack
+        CMClockRef hostClock = CMClockGetHostTimeClock();
+        _player.masterClock = [RCTVideo sharedMasterClock];
+      
         
-       _player.masterClock = [RCTVideo sharedMasterClock];
+       //[_player setRate:1.0 time:kCMTimeInvalid atHostTime:CMClockGetTime(hostClock)];
       //
+        
+        NSLog(@"new player created");
       
       _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
         
@@ -884,9 +910,17 @@ static int const RCTVideoUnset = -1;
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
       [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
     }
-   
+     
+    // hack
+    //CMClockRef hostClock = CMClockGetHostTimeClock();
+    [_player setAutomaticallyWaitsToMinimizeStalling:NO];
+    [_player setRate:1.0 time:kCMTimeInvalid atHostTime:CMClockGetTime([RCTVideo sharedMasterClock])];
+      
     [_player play];
-    [_player setRate:_rate];
+    
+    //[[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+      
+    //[_player setRate:_rate];
   }
   
   _paused = paused;
