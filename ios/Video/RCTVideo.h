@@ -51,4 +51,8 @@
 
 - (void)save:(NSDictionary *)options resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject;
 
+- (CIImage *)getFrame;
+
+- (AVPlayerLayer *)getPlayerLayer;
+
 @end

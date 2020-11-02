@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		979FD6802551B70800E55EE1 /* RCTVideo.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = D1107C072110259000073188 /* RCTVideo.h */; };
+		979FD6812551B70800E55EE1 /* RCTVideoPlayerViewController.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = D1107C012110259000073188 /* RCTVideoPlayerViewController.h */; };
+		979FD6822551B70800E55EE1 /* RCTVideoPlayerViewControllerDelegate.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = D1107C022110259000073188 /* RCTVideoPlayerViewControllerDelegate.h */; };
+		979FD6832551B70800E55EE1 /* UIView+FindUIViewController.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = D1107C042110259000073188 /* UIView+FindUIViewController.h */; };
 		D1107C0A2110259000073188 /* UIView+FindUIViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1107C032110259000073188 /* UIView+FindUIViewController.m */; };
 		D1107C0B2110259000073188 /* UIView+FindUIViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1107C032110259000073188 /* UIView+FindUIViewController.m */; };
 		D1107C0C2110259000073188 /* RCTVideo.m in Sources */ = {isa = PBXBuildFile; fileRef = D1107C052110259000073188 /* RCTVideo.m */; };
@@ -24,6 +28,10 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
+				979FD6802551B70800E55EE1 /* RCTVideo.h in CopyFiles */,
+				979FD6812551B70800E55EE1 /* RCTVideoPlayerViewController.h in CopyFiles */,
+				979FD6822551B70800E55EE1 /* RCTVideoPlayerViewControllerDelegate.h in CopyFiles */,
+				979FD6832551B70800E55EE1 /* UIView+FindUIViewController.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,6 +171,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 58B511D21A9E6C8500147676;

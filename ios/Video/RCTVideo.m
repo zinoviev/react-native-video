@@ -27,6 +27,8 @@ static int const RCTVideoUnset = -1;
 {
   AVPlayer *_player;
   AVPlayerItem *_playerItem;
+  AVPlayerItemVideoOutput *_playerOutput;
+
   NSDictionary *_source;
   BOOL _playerItemObserversSet;
   BOOL _playerBufferEmpty;
@@ -358,7 +360,8 @@ static int const RCTVideoUnset = -1;
 }
 
 # pragma mark - Hackity hack
-+ (CMClockRef) sharedMasterClock {
++ (CMClockRef) sharedMasterClock
+{
     static CMClockRef masterClockInstance = nil;
     if (masterClockInstance == nil) {
         CMAudioClockCreate(nil, masterClockInstance);
@@ -399,17 +402,22 @@ static int const RCTVideoUnset = -1;
         
       _player = [AVPlayer playerWithPlayerItem:_playerItem];
       
-      [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+      // Create output.
+      // We will use it for catching color of pixels (ignore touches for transparent parts of video)
+      NSDictionary *settings = @{ (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) };
+
+      _playerOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:settings];
+      [_playerItem addOutput:_playerOutput];
+
+      // Start hack for syncronized videos
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
       
-      // start hack
         CMClockRef hostClock = CMClockGetHostTimeClock();
         _player.masterClock = [RCTVideo sharedMasterClock];
-      
         
-       //[_player setRate:1.0 time:kCMTimeInvalid atHostTime:CMClockGetTime(hostClock)];
-      //
-        
+        // [_player setRate:1.0 time:kCMTimeInvalid atHostTime:CMClockGetTime(hostClock)];
         NSLog(@"new player created");
+      // End hack
       
       _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
         
@@ -510,6 +518,25 @@ static int const RCTVideoUnset = -1;
   }
 
   handler([AVPlayerItem playerItemWithAsset:mixComposition]);
+}
+
+- (CIImage *)getFrame
+{
+  CVPixelBufferRef buffer = [_playerOutput copyPixelBufferForItemTime:_playerItem.currentTime
+                                                   itemTimeForDisplay:nil];
+  
+  if (buffer) {
+    CIImage *ciImage = [CIImage imageWithCVPixelBuffer:buffer];
+    CVPixelBufferRelease(buffer);
+    return ciImage;
+  }
+  
+  return nil;
+}
+
+- (AVPlayerLayer *)getPlayerLayer
+{
+  return _playerLayer;
 }
 
 - (void)playerItemForSource:(NSDictionary *)source withCallback:(void(^)(AVPlayerItem *))handler
@@ -1538,7 +1565,10 @@ static int const RCTVideoUnset = -1;
     [_player removeObserver:self forKeyPath:externalPlaybackActive context:nil];
     _isExternalPlaybackActiveObserverRegistered = NO;
   }
+  
   _player = nil;
+  _playerItem = nil;
+  _playerOutput = nil;
   
   [self removePlayerLayer];
   
