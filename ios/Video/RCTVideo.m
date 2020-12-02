@@ -147,12 +147,16 @@ static int const RCTVideoUnset = -1;
 
 - (void)starifyHack:(NSNotification *)notification
 {
+  if (_paused) {
+    return;
+  }
     NSLog(@"in hack");
-    
+  
     //AVPlayerItem *item = [notification object];
     if (_player != nil && _playerItem != nil) {
-        if (_player.status == AVPlayerStatusReadyToPlay) {
-            [_playerItem seekToTime:kCMTimeZero];
+        if (_playerItem.status == AVPlayerItemStatusReadyToPlay) {
+          CMTime hostTime = CMClockGetTime([RCTVideo sharedMasterClock]);
+            [_player setRate:1 time:kCMTimeZero atHostTime:hostTime];
             [self applyModifiers];
         }
       
@@ -354,7 +358,7 @@ static int const RCTVideoUnset = -1;
     [_playerItem removeObserver:self forKeyPath:statusKeyPath];
     [_playerItem removeObserver:self forKeyPath:playbackBufferEmptyKeyPath];
     [_playerItem removeObserver:self forKeyPath:playbackLikelyToKeepUpKeyPath];
-    [_playerItem removeObserver:self forKeyPath:timedMetadata];
+    [_playerItem removeObserver:self forKeyPath:timedMetadata];    
     _playerItemObserversSet = NO;
   }
 }
@@ -364,11 +368,11 @@ static int const RCTVideoUnset = -1;
 {
     static CMClockRef masterClockInstance = nil;
     if (masterClockInstance == nil) {
-        CMAudioClockCreate(nil, masterClockInstance);
+      CMClockRef syncTime = CMClockGetHostTimeClock();
+      masterClockInstance = syncTime;
     }
 
     return masterClockInstance;
-    //return nil;
 }
 
 #pragma mark - Player and source
@@ -408,15 +412,9 @@ static int const RCTVideoUnset = -1;
 
       _playerOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:settings];
       [_playerItem addOutput:_playerOutput];
-
-      // Start hack for syncronized videos
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
       
-        CMClockRef hostClock = CMClockGetHostTimeClock();
+      [_player setAutomaticallyWaitsToMinimizeStalling:NO];
         _player.masterClock = [RCTVideo sharedMasterClock];
-        
-        // [_player setRate:1.0 time:kCMTimeInvalid atHostTime:CMClockGetTime(hostClock)];
-        NSLog(@"new player created");
       // End hack
       
       _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
@@ -729,6 +727,12 @@ static int const RCTVideoUnset = -1;
         
         [self attachListeners];
         [self applyModifiers];
+        
+        // Start hack for syncronized videos
+        if (!_paused) {
+          [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+        }
+
       } else if (_playerItem.status == AVPlayerItemStatusFailed && self.onVideoError) {
         self.onVideoError(@{@"error": @{@"code": [NSNumber numberWithInteger: _playerItem.error.code],
                                         @"domain": _playerItem.error.domain},
