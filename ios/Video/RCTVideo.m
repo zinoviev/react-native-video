@@ -57,6 +57,9 @@ static int const RCTVideoUnset = -1;
   float _rate;
   float _maxBitRate;
 
+  BOOL _shouldSync;
+  BOOL _syncedAlready;
+  
   BOOL _muted;
   BOOL _paused;
   BOOL _repeat;
@@ -116,6 +119,7 @@ static int const RCTVideoUnset = -1;
 #if __has_include(<react-native-video/RCTVideoCache.h>)
     _videoCache = [RCTVideoCache sharedInstance];
 #endif
+    
     [[NSNotificationCenter defaultCenter] addObserver:self
     selector:@selector(starifyHack:)
         name:@"STARIFY_Hack"
@@ -147,7 +151,8 @@ static int const RCTVideoUnset = -1;
 
 - (void)starifyHack:(NSNotification *)notification
 {
-  if (_paused) {
+//  NSLog(@"AAAA starifyHack, %@", _source[@"uri"]);
+  if (!_shouldSync) {
     return;
   }
   
@@ -156,6 +161,7 @@ static int const RCTVideoUnset = -1;
         if (_playerItem.status == AVPlayerItemStatusReadyToPlay) {
             CMTime hostTime = CMClockGetTime([RCTVideo sharedMasterClock]);
             [_player setRate:1 time:kCMTimeZero atHostTime:hostTime];
+          _syncedAlready = true;
             // [self applyModifiers];
         }
       
@@ -412,8 +418,12 @@ static int const RCTVideoUnset = -1;
       _playerOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:settings];
       [_playerItem addOutput:_playerOutput];
       
-      [_player setAutomaticallyWaitsToMinimizeStalling:NO];
-        _player.masterClock = [RCTVideo sharedMasterClock];
+      // Not sure about this place
+      if (_shouldSync) {
+        _syncedAlready = false;
+        [_player setAutomaticallyWaitsToMinimizeStalling:NO];
+          _player.masterClock = [RCTVideo sharedMasterClock];
+      }
       // End hack
       
       _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
@@ -728,7 +738,8 @@ static int const RCTVideoUnset = -1;
         [self applyModifiers];
         
         // Start hack for syncronized videos
-        if (!_paused) {
+        if (_shouldSync) {
+//          NSLog(@"AAAA fire hack from playeritemstatusready, %@", _source[@"uri"]);
           [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
         }
 
@@ -929,6 +940,12 @@ static int const RCTVideoUnset = -1;
   [self applyModifiers];
 }
 
+- (void)setShouldSync:(BOOL)shouldSync
+{
+  _shouldSync = shouldSync;
+//  [self applyModifiers];
+}
+
 - (void)setPaused:(BOOL)paused
 {
   if (paused) {
@@ -942,12 +959,13 @@ static int const RCTVideoUnset = -1;
     }
      
     // hack
-    //CMClockRef hostClock = CMClockGetHostTimeClock();
     [_player setAutomaticallyWaitsToMinimizeStalling:NO];
-      
     [_player setRate:1.0 time:kCMTimeZero atHostTime:CMClockGetTime([RCTVideo sharedMasterClock])];
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+    if (_shouldSync && !_syncedAlready) {
+//      NSLog(@"AAAA fire hack from setPaused %@, %@", _paused ? @"TRUE" : @"FALSE", _source[@"uri"]);
+      [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+    }
       
     //[_player setRate:_rate];
   }
