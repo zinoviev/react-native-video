@@ -150,14 +150,13 @@ static int const RCTVideoUnset = -1;
   if (_paused) {
     return;
   }
-    NSLog(@"in hack");
   
     //AVPlayerItem *item = [notification object];
     if (_player != nil && _playerItem != nil) {
         if (_playerItem.status == AVPlayerItemStatusReadyToPlay) {
-          CMTime hostTime = CMClockGetTime([RCTVideo sharedMasterClock]);
+            CMTime hostTime = CMClockGetTime([RCTVideo sharedMasterClock]);
             [_player setRate:1 time:kCMTimeZero atHostTime:hostTime];
-            [self applyModifiers];
+            // [self applyModifiers];
         }
       
     }
@@ -945,11 +944,10 @@ static int const RCTVideoUnset = -1;
     // hack
     //CMClockRef hostClock = CMClockGetHostTimeClock();
     [_player setAutomaticallyWaitsToMinimizeStalling:NO];
-    [_player setRate:1.0 time:kCMTimeInvalid atHostTime:CMClockGetTime([RCTVideo sharedMasterClock])];
       
-    [_player play];
+    [_player setRate:1.0 time:kCMTimeZero atHostTime:CMClockGetTime([RCTVideo sharedMasterClock])];
     
-    //[[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"STARIFY_Hack" object:nil userInfo:@{}];
       
     //[_player setRate:_rate];
   }
