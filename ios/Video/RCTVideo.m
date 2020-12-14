@@ -363,7 +363,7 @@ static int const RCTVideoUnset = -1;
     [_playerItem removeObserver:self forKeyPath:statusKeyPath];
     [_playerItem removeObserver:self forKeyPath:playbackBufferEmptyKeyPath];
     [_playerItem removeObserver:self forKeyPath:playbackLikelyToKeepUpKeyPath];
-    [_playerItem removeObserver:self forKeyPath:timedMetadata];    
+    [_playerItem removeObserver:self forKeyPath:timedMetadata];
     _playerItemObserversSet = NO;
   }
 }
@@ -410,21 +410,22 @@ static int const RCTVideoUnset = -1;
       }
         
       _player = [AVPlayer playerWithPlayerItem:_playerItem];
-      
-      // Create output.
-      // We will use it for catching color of pixels (ignore touches for transparent parts of video)
-      NSDictionary *settings = @{ (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) };
-
-      _playerOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:settings];
-      [_playerItem addOutput:_playerOutput];
-      
+     
+      // START HACK
+        
+      // Reset instance of output.
+      // Will be use it for catching color of pixels (ignore touches for transparent parts of video)
+      // This field lazy init at getFrame() method
+      _playerOutput = nil;
+    
+        
       // Not sure about this place
       if (_shouldSync) {
         _syncedAlready = false;
         [_player setAutomaticallyWaitsToMinimizeStalling:NO];
           _player.masterClock = [RCTVideo sharedMasterClock];
       }
-      // End hack
+      // END HACK
       
       _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
         
@@ -529,6 +530,14 @@ static int const RCTVideoUnset = -1;
 
 - (CIImage *)getFrame
 {
+  // lazy init of output
+  if (_playerOutput == nil) {
+    NSDictionary *settings = @{ (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) };
+    _playerOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:settings];
+    [_playerItem addOutput:_playerOutput];
+  }
+    
+    
   CVPixelBufferRef buffer = [_playerOutput copyPixelBufferForItemTime:_playerItem.currentTime
                                                    itemTimeForDisplay:nil];
   
